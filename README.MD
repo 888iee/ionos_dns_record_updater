@@ -5,7 +5,7 @@
 </p>
 
 ## About the Project
-Since IONOS made an API available to manage you domains and I needed to change my 
+Since IONOS made an API available to manage your domains and I needed to change my 
 records regularly I decided to create an automated dns record updater.
 
 ## Getting Started
