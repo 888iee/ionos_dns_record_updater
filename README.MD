@@ -46,10 +46,9 @@ chmod +x updater.sh
 ./updater "my.ip.adr"
 ```
 
-## License
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## Dislaimer
+## Disclaimer
 
 Only IPv4 Adress was tested. 
 
+## License
+Distributed under the MIT License. See `LICENSE` for more information.
