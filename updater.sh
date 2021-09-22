@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # source .env file
-. .env
+SCRIPTPATH=$(dirname $(readlink -f "$0"))
+. "$SCRIPTPATH/.env"
 
 # vars
 base_url="https://api.hosting.ionos.com/"
