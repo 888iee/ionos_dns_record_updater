@@ -19,8 +19,8 @@ function checkIfZoneIdExists {
 	then  
 		# get zone ID
 		zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s | jq '.[] | .id?');
-		echo "zone_id=$zone_id" >> .env
-		. .env
+		echo "zone_id=$zone_id" >> "$SCRIPTPATH/.env"
+		. "$SCRIPTPATH/.env"
 	fi
 }
 
@@ -30,8 +30,8 @@ function checkIfRecordIdExists {
 	then
 		# get record ID
 		record_id=$(curl -X GET "$base_url$dns_zone/$zone_id?recordName=$domain&recordType=$dns_type" -H $output_type -H "$curl_param $api_key" -s | jq '.records? | .[] | .id?')
-		echo "record_id=$record_id" >> .env
-		. .env
+		echo "record_id=$record_id" >> "$SCRIPTPATH/.env"
+		. "$SCRIPTPATH/.env"
 	fi
 }
 
