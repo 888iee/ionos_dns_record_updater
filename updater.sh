@@ -34,12 +34,21 @@ function Help() {
     echo
 }
 
+function log() {
+	if [ $verbose_mode ];
+	then
+		echo $1
+	fi
+}
+
 function RetrieveIpAdress() {
 	ip=$(curl -s https://ipinfo.io/ip)
-	# echo "ip set to $ip" 
+	log "ip set to $ip" 
 }
 
 function RetrieveZoneId() {
+
+	log "retrieving zone id"
 
 	# get zone ID
 	zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s );
@@ -55,26 +64,35 @@ function RetrieveZoneId() {
 	fi
 
 	zone_id=$(echo $zone_id | jq '.[] | .id?' | tr -d '"');
+	log "zoneid was set to $zone_id"
 }
 
 function DeleteRecord() {
+	
+	log "deleting record $1"
+
 	delete_url="$base_url$dns_zone/$zone_id/records/$1"
 
-	echo $1
 	curl -X DELETE $delete_url -H "accept: */*" -H "$curl_param $api_key"
 }
 
 function GetCustomerZone() {
+
+	log "retrieving dns records"
+
 	customer_url="$base_url$dns_zone/$zone_id?recordType=$dns_type"
 	
 	records=$(curl -X GET $customer_url -H $output_type -H "$curl_param $api_key" -s | jq '.records')
-	# echo $bla
+	
+	log "find maching domain record"
+
 	echo $records | jq -c '.[]'  | while read i; do
 
 		name=$(echo $i | jq '.name' | tr -d '"')
 		
 		if [[ $name = "$domain" || $name = "www.$domain" ]];
 		then
+			log "matching record found"
 			rec_id=$(echo $i | jq '.id' | tr -d '"')
 			DeleteRecord "$rec_id"
 		fi
@@ -82,6 +100,9 @@ function GetCustomerZone() {
 }
 	
 function CreateDNSRecord() {
+
+	log "creating dns record"
+
 	createdns_url="$base_url$dns_zone/$zone_id/records"
 	record_content="[{\"name\":\"$domain\",\"type\":\"$dns_type\",\"content\":\"$ip\",\"ttl\":60,\"prio\":0,\"disabled\":false}]"
 
@@ -92,10 +113,10 @@ function CheckIP() {
 	# check ip regex
 	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
 	then
-		echo "ip set to $ip" 
+		log "ip set to $ip" 
 	else
-# 		echo "adress isn't valid or set. 
-# This script will search for the actual ip adress of this machine."
+		log "adress isn't valid or set. 
+This script will search for the actual ip adress of this machine."
 		RetrieveIpAdress
 	fi
 }
@@ -106,7 +127,7 @@ function CheckIP() {
 ###################################
 
 # Get Flags
-while getopts "hia:" opt; do
+while getopts "hia:v" opt; do
         case $opt in
 			# display help
 			h) Help;;
@@ -116,6 +137,9 @@ while getopts "hia:" opt; do
 
 			# interactive mode 
 			i) ;;
+
+			# verbose mode
+			v) verbose_mode=true;;
 
 			# invalid options
 			\?) echo "Error: Invalid options"
@@ -128,3 +152,5 @@ CheckIP
 RetrieveZoneId
 GetCustomerZone
 CreateDNSRecord
+
+log "script is done and will exit"
