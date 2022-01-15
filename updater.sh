@@ -33,6 +33,11 @@ function Help() {
     echo
 }
 
+function RetrieveIPAdress() {
+	ip=$(curl -s https://ipinfo.io/ip)
+	echo "ip set to $ip" 
+}
+
 function CheckIP() {
 	# check ip regex
 	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
@@ -41,6 +46,7 @@ function CheckIP() {
 	else
 		echo "Given adress is not a valid ip. 
 This script will search for the actual ip adress of this machine."
+		RetrieveIPAdress
 	fi
 }
 
