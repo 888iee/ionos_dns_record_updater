@@ -33,7 +33,7 @@ apt install curl jq
 5. Paste your key and values in 
 	```ini
 	api_key="prefix.encryptionkey"
-	domain="https://my.domain.com"
+	domain="my.domain.com"
 	dns_type="A"
 	```
 
@@ -43,7 +43,7 @@ You can run the updater script with following commands.
 Replace my.ip.adr with your real ip adress
 ```bash
 chmod +x updater.sh
-./updater "my.ip.adr"
+./updater "127.0.0.1"
 ```
 
 ## Disclaimer
