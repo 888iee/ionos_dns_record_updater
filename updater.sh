@@ -1,40 +1,8 @@
 #!/bin/bash
 
 ###################################
-########## Help ###################
+########## Variables ##############
 ###################################
-Help() {
-	# Show Help
-	echo "If you need further help than the below, read the readme file \n
-	or create an issue on github"
-    echo "Syntax update.sh [-a|-i|-v]."
-    echo "options:"
-    echo "-a	change dns entry to given ip adress"
-	echo "-i	start interactive mode"
-    echo "-v	give verbose output"
-    echo
-}
-
-# Get Flags
-while getopts "hia:" opt; do
-        case $opt in
-                h) # display help
-                        Help;;
-
-				a) # ip adress
-					IP=$OPTARGS;;
-
-                i) # interactive mode 
-				;;
-
-                \?) # invalid options
-                        echo "Error: Invalid options"
-                        exit 0;;
-        esac
-done
-
-
-
 
 # source .env file
 SCRIPTPATH=$(dirname $(readlink -f "$0"))
@@ -48,6 +16,59 @@ dns_records_start="dns/v1/"
 dns_records_end="/records/"
 zone="zones/"
 output_type="accept: application/json"
+
+###################################
+########## Functions ##############
+###################################
+
+function Help() {
+	# Show Help
+	echo "If you need further help than the below, read the readme file \n
+	or create an issue on github"
+    echo "Syntax update.sh [-a|-i|-v]."
+    echo "options:"
+    echo "-a	change dns entry to given ip adress"
+	echo "-i	start interactive mode"
+    echo "-v	give verbose output"
+    echo
+}
+
+function CheckIP() {
+	# check ip regex
+	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
+	then
+		echo "ip set to $ip" 
+	else
+		echo "Given adress is not a valid ip. 
+This script will search for the actual ip adress of this machine."
+	fi
+}
+
+###################################
+########## START ##################
+###################################
+
+# Get Flags
+while getopts "hia:" opt; do
+        case $opt in
+			# display help
+			h) Help;;
+
+			# ip adress
+			a) ip=$OPTARG;;
+
+			# interactive mode 
+			i) ;;
+
+			# invalid options
+			\?) echo "Error: Invalid options"
+				exit 1;;
+        esac
+done
+
+# checks if ip was set and retrieves it if not
+CheckIP
+
 
 function checkIfZoneIdExists {
 
@@ -86,14 +107,14 @@ function UpdateDNSRecord {
 	curl -X PUT "$updater_url" -H "Content-Type: application/json" -H "$curl_param $api_key" -d "$req_body"
 }
 
-checkIfZoneIdExists
-checkIfRecordIdExists
+# checkIfZoneIdExists
+# checkIfRecordIdExists
 
-# get current ip in dns record
-current_ip=$(GetDNSRecord)
+# # get current ip in dns record
+# current_ip=$(GetDNSRecord)
 
-# update ip if they don't match
-if [[ "$1" != "$current_ip" ]];
-then
-	UpdateDNSRecord "$1"
-fi
+# # update ip if they don't match
+# if [[ "$1" != "$current_ip" ]];
+# then
+# 	UpdateDNSRecord "$1"
+# fi
