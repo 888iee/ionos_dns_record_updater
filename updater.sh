@@ -25,17 +25,26 @@ function Help() {
 	# Show Help
 	echo "If you need further help than the below, read the readme file \n
 	or create an issue on github"
-    echo "Syntax update.sh [-a|-i|-v]."
+    echo "Syntax update.sh [-a|-e|-f|-v]."
     echo "options:"
     echo "-a	change dns entry to given ip adress"
 	echo "-e	show error codes"
-	echo "-i	start interactive mode"
+	echo "-f	redirect verbose output to file"
     echo "-v	give verbose output"
     echo
 }
 
+function ErrorCodes() {
+	echo "Error Codes: "
+	echo "1		Invalid flags or reference"
+	echo "2 	ZoneId was found"
+}
+
 function log() {
-	if [ $verbose_mode ];
+	if [ $redirect_mode ];
+	then
+		echo $1 >> $redirect_file
+	elif [ $verbose_mode ];
 	then
 		echo $1
 	fi
@@ -127,7 +136,7 @@ This script will search for the actual ip adress of this machine."
 ###################################
 
 # Get Flags
-while getopts "hia:v" opt; do
+while getopts "ha:ef:v" opt; do
         case $opt in
 			# display help
 			h) Help;;
@@ -135,8 +144,11 @@ while getopts "hia:v" opt; do
 			# ip adress
 			a) ip=$OPTARG;;
 
-			# interactive mode 
-			i) ;;
+			# show error codes
+			e) ErrorCodes exit;;
+
+			# redirect verbose output to file
+			f) redirect_mode=true && redirect_file=$OPTARG;;
 
 			# verbose mode
 			v) verbose_mode=true;;
