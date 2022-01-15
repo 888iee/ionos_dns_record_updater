@@ -81,6 +81,13 @@ function GetCustomerZone() {
 	done
 }
 	
+function CreateDNSRecord() {
+	createdns_url="$base_url$dns_zone/$zone_id/records"
+	record_content="[{\"name\":\"$domain\",\"type\":\"$dns_type\",\"content\":\"$ip\",\"ttl\":60,\"prio\":0,\"disabled\":false}]"
+
+	curl -X POST $createdns_url -H "accept: */*" -H "$curl_param $api_key" -H "Content-Type: application/json" -d "$record_content"
+}
+
 function CheckIP() {
 	# check ip regex
 	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
@@ -120,3 +127,4 @@ done
 CheckIP
 RetrieveZoneId
 GetCustomerZone
+CreateDNSRecord
