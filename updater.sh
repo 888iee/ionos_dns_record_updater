@@ -1,5 +1,9 @@
 #!/bin/bash
 
+###################################
+########## Variables ##############
+###################################
+
 # source .env file
 SCRIPTPATH=$(dirname $(readlink -f "$0"))
 . "$SCRIPTPATH/.env"
@@ -13,51 +17,152 @@ dns_records_end="/records/"
 zone="zones/"
 output_type="accept: application/json"
 
-function checkIfZoneIdExists {
+###################################
+########## Functions ##############
+###################################
 
-	if [ -z ${zone_id+x} ]; 
-	then  
-		# get zone ID
-		zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s | jq '.[] | .id?');
-		echo "zone_id=$zone_id" >> "$SCRIPTPATH/.env"
-		. "$SCRIPTPATH/.env"
-	fi
+function Help() {
+	# Show Help
+	echo "If you need further help than the below, read the readme file \n
+	or create an issue on github"
+    echo "Syntax update.sh [-a|-e|-f|-v]."
+    echo "options:"
+    echo "-a	change dns entry to given ip adress"
+	echo "-e	show error codes"
+	echo "-f	redirect verbose output to file"
+    echo "-v	give verbose output"
+    echo
 }
 
-function checkIfRecordIdExists {
+function ErrorCodes() {
+	echo "Error Codes: "
+	echo "1		Invalid flags or reference"
+	echo "2 	ZoneId was found"
+}
 
-	if [ -z ${record_id+x} ]; 
+function log() {
+	if [ $redirect_mode ];
 	then
-		# get record ID
-		record_id=$(curl -X GET "$base_url$dns_zone/$zone_id?recordName=$domain&recordType=$dns_type" -H $output_type -H "$curl_param $api_key" -s | jq '.records? | .[] | .id?')
-		echo "record_id=$record_id" >> "$SCRIPTPATH/.env"
-		. "$SCRIPTPATH/.env"
+		echo $1 >> $redirect_file
+	elif [ $verbose_mode ];
+	then
+		echo $1
 	fi
 }
 
-function GetDNSRecord {
-
-	record_url="$base_url$dns_records_start$zone$zone_id$dns_records_end$record_id"
-
-	curl -X GET "$record_url" -H "$output_type" -H "$curl_param $api_key" -s | jq '.content'
+function RetrieveIpAdress() {
+	ip=$(curl -s https://ipinfo.io/ip)
+	log "ip set to $ip" 
 }
 
-function UpdateDNSRecord {
+function RetrieveZoneId() {
 
-	updater_url="$base_url$dns_records_start$zone$zone_id$dns_records_end$record_id"
-	req_body="{\"content\":\"$1\"}"
+	log "retrieving zone id"
 
-	curl -X PUT "$updater_url" -H "Content-Type: application/json" -H "$curl_param $api_key" -d "$req_body"
+	# get zone ID
+	zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s );
+	
+	# check if valid object was found
+	name=$(echo $zone_id | jq '.[] | .name?' );
+	
+	if [[ "$name" == "" ]]
+	then 
+		# exit with error 
+		echo "Error: $zone_id | jq '.[]'"
+		exit 2
+	fi
+
+	zone_id=$(echo $zone_id | jq '.[] | .id?' | tr -d '"');
+	log "zoneid was set to $zone_id"
 }
 
-checkIfZoneIdExists
-checkIfRecordIdExists
+function DeleteRecord() {
+	
+	log "deleting record $1"
 
-# get current ip in dns record
-current_ip=$(GetDNSRecord)
+	delete_url="$base_url$dns_zone/$zone_id/records/$1"
 
-# update ip if they don't match
-if [[ "$1" != "$current_ip" ]];
-then
-	UpdateDNSRecord "$1"
-fi
+	curl -X DELETE $delete_url -H "accept: */*" -H "$curl_param $api_key"
+}
+
+function GetCustomerZone() {
+
+	log "retrieving dns records"
+
+	customer_url="$base_url$dns_zone/$zone_id?recordType=$dns_type"
+	
+	records=$(curl -X GET $customer_url -H $output_type -H "$curl_param $api_key" -s | jq '.records')
+	
+	log "find maching domain record"
+
+	echo $records | jq -c '.[]'  | while read i; do
+
+		name=$(echo $i | jq '.name' | tr -d '"')
+		
+		if [[ $name = "$domain" || $name = "www.$domain" ]];
+		then
+			log "matching record found"
+			rec_id=$(echo $i | jq '.id' | tr -d '"')
+			DeleteRecord "$rec_id"
+		fi
+	done
+}
+	
+function CreateDNSRecord() {
+
+	log "creating dns record"
+
+	createdns_url="$base_url$dns_zone/$zone_id/records"
+	record_content="[{\"name\":\"$domain\",\"type\":\"$dns_type\",\"content\":\"$ip\",\"ttl\":60,\"prio\":0,\"disabled\":false}]"
+
+	curl -X POST $createdns_url -H "accept: */*" -H "$curl_param $api_key" -H "Content-Type: application/json" -d "$record_content"
+}
+
+function CheckIP() {
+	# check ip regex
+	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
+	then
+		log "ip set to $ip" 
+	else
+		log "adress isn't valid or set. 
+This script will search for the actual ip adress of this machine."
+		RetrieveIpAdress
+	fi
+}
+
+
+###################################
+########## START ##################
+###################################
+
+# Get Flags
+while getopts "ha:ef:v" opt; do
+        case $opt in
+			# display help
+			h) Help;;
+
+			# ip adress
+			a) ip=$OPTARG;;
+
+			# show error codes
+			e) ErrorCodes exit;;
+
+			# redirect verbose output to file
+			f) redirect_mode=true && redirect_file=$OPTARG;;
+
+			# verbose mode
+			v) verbose_mode=true;;
+
+			# invalid options
+			\?) echo "Error: Invalid options"
+				exit 1;;
+        esac
+done
+
+# checks if ip was set and retrieves it if not
+CheckIP
+RetrieveZoneId
+GetCustomerZone
+CreateDNSRecord
+
+log "script is done and will exit"
