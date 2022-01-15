@@ -1,5 +1,41 @@
 #!/bin/bash
 
+###################################
+########## Help ###################
+###################################
+Help() {
+	# Show Help
+	echo "If you need further help than the below, read the readme file \n
+	or create an issue on github"
+    echo "Syntax update.sh [-a|-i|-v]."
+    echo "options:"
+    echo "-a	change dns entry to given ip adress"
+	echo "-i	start interactive mode"
+    echo "-v	give verbose output"
+    echo
+}
+
+# Get Flags
+while getopts "hia:" opt; do
+        case $opt in
+                h) # display help
+                        Help;;
+
+				a) # ip adress
+					IP=$OPTARGS;;
+
+                i) # interactive mode 
+				;;
+
+                \?) # invalid options
+                        echo "Error: Invalid options"
+                        exit 0;;
+        esac
+done
+
+
+
+
 # source .env file
 SCRIPTPATH=$(dirname $(readlink -f "$0"))
 . "$SCRIPTPATH/.env"
