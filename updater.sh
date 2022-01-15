@@ -28,14 +28,33 @@ function Help() {
     echo "Syntax update.sh [-a|-i|-v]."
     echo "options:"
     echo "-a	change dns entry to given ip adress"
+	echo "-e	show error codes"
 	echo "-i	start interactive mode"
     echo "-v	give verbose output"
     echo
 }
 
-function RetrieveIPAdress() {
+function RetrieveIpAdress() {
 	ip=$(curl -s https://ipinfo.io/ip)
 	echo "ip set to $ip" 
+}
+
+function RetrieveZoneId() {
+
+	# get zone ID
+	zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" );
+	
+	# check if valid object was found
+	name=$(echo $zone_id | jq '.[] | .name?' );
+	
+	if [[ "$name" == "" ]]
+	then 
+		# exit with error 
+		echo "Error: $zone_id | jq '.[]'"
+		exit 2
+	fi
+
+	zone_id=$(echo $zone_id | jq '.[] | .id?');
 }
 
 function CheckIP() {
@@ -46,9 +65,10 @@ function CheckIP() {
 	else
 		echo "Given adress is not a valid ip. 
 This script will search for the actual ip adress of this machine."
-		RetrieveIPAdress
+		RetrieveIpAdress
 	fi
 }
+
 
 ###################################
 ########## START ##################
@@ -74,18 +94,7 @@ done
 
 # checks if ip was set and retrieves it if not
 CheckIP
-
-
-function checkIfZoneIdExists {
-
-	if [ -z ${zone_id+x} ]; 
-	then  
-		# get zone ID
-		zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s | jq '.[] | .id?');
-		echo "zone_id=$zone_id" >> "$SCRIPTPATH/.env"
-		. "$SCRIPTPATH/.env"
-	fi
-}
+RetrieveZoneId
 
 function checkIfRecordIdExists {
 
