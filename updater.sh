@@ -3,7 +3,7 @@
 ###################################
 ########## Variables ##############
 ###################################
-
+export TOP_PID=$$
 # source .env file
 SCRIPTPATH=$(dirname $(readlink -f "$0"))
 . "$SCRIPTPATH/.env"
@@ -24,7 +24,7 @@ output_type="accept: application/json"
 function Help() {
 	# Show Help
 	echo "If you need further help than the below, read the readme file \n
-	or create an issue on github"
+	or create an issue on github."
     echo "Syntax update.sh [-a|-e|-f|-v]."
     echo "options:"
     echo "-a	change dns entry to given ip adress"
@@ -52,12 +52,12 @@ function log() {
 
 function RetrieveIpAdress() {
 	ip=$(curl -s https://ipinfo.io/ip)
-	log "ip set to $ip" 
+	log "Ip set to $ip." 
 }
 
 function RetrieveZoneId() {
 
-	log "retrieving zone id"
+	log "Retrieving zone id."
 
 	# get zone ID
 	zone_id=$(curl -X GET "$base_url$dns_zone" -H "$curl_param $api_key" -s );
@@ -73,12 +73,12 @@ function RetrieveZoneId() {
 	fi
 
 	zone_id=$(echo $zone_id | jq '.[] | .id?' | tr -d '"');
-	log "zoneid was set to $zone_id"
+	log "Zoneid was set to $zone_id."
 }
 
 function DeleteRecord() {
 	
-	log "deleting record $1"
+	log "Deleting record $1."
 
 	delete_url="$base_url$dns_zone/$zone_id/records/$1"
 
@@ -87,13 +87,13 @@ function DeleteRecord() {
 
 function GetCustomerZone() {
 
-	log "retrieving dns records"
+	log "Retrieving dns records."
 
 	customer_url="$base_url$dns_zone/$zone_id?recordType=$dns_type"
 	
 	records=$(curl -X GET $customer_url -H $output_type -H "$curl_param $api_key" -s | jq '.records')
 	
-	log "find maching domain record"
+	log "Find maching domain record."
 
 	echo $records | jq -c '.[]'  | while read i; do
 
@@ -101,7 +101,18 @@ function GetCustomerZone() {
 		
 		if [[ $name = "$domain" || $name = "www.$domain" ]];
 		then
-			log "matching record found"
+			log "Matching record found."
+			
+			current_ip=$(echo $i | jq '.content' | tr -d '"')
+			
+			if [[ "$current_ip" == "$ip" ]];
+			then 
+
+				log "Current ip is set. Script will quit now."
+				kill -s TERM $TOP_PID
+			
+			fi
+
 			rec_id=$(echo $i | jq '.id' | tr -d '"')
 			DeleteRecord "$rec_id"
 		fi
@@ -110,7 +121,7 @@ function GetCustomerZone() {
 	
 function CreateDNSRecord() {
 
-	log "creating dns record"
+	log "Creating DNS Record."
 
 	createdns_url="$base_url$dns_zone/$zone_id/records"
 	record_content="[{\"name\":\"$domain\",\"type\":\"$dns_type\",\"content\":\"$ip\",\"ttl\":60,\"prio\":0,\"disabled\":false}]"
@@ -122,9 +133,9 @@ function CheckIP() {
 	# check ip regex
 	if [[ $ip =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]];
 	then
-		log "ip set to $ip" 
+		log "Ip set to $ip" 
 	else
-		log "adress isn't valid or set. 
+		log "Adress isn't valid or set. 
 This script will search for the actual ip adress of this machine."
 		RetrieveIpAdress
 	fi
@@ -165,4 +176,4 @@ RetrieveZoneId
 GetCustomerZone
 CreateDNSRecord
 
-log "script is done and will exit"
+log "This script is done and will exit"
