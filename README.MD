@@ -40,13 +40,15 @@ apt install curl jq
 ## Usage
 
 You can run the updater script with following commands.
-Replace my.ip.adr with your real ip adress
 ```bash
 chmod +x updater.sh
 ./updater 
 # or set ip initally and don't retrieve ip automatically 
 ./updater -a 127.0.0.1
+# for more information
+./updater -h
 ```
+
 
 ## Disclaimer
 
