@@ -43,7 +43,9 @@ You can run the updater script with following commands.
 Replace my.ip.adr with your real ip adress
 ```bash
 chmod +x updater.sh
-./updater "127.0.0.1"
+./updater 
+# or set ip initally and don't retrieve ip automatically 
+./updater -a 127.0.0.1
 ```
 
 ## Disclaimer
