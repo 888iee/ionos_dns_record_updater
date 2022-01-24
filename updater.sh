@@ -16,6 +16,7 @@ dns_records_start="dns/v1/"
 dns_records_end="/records/"
 zone="zones/"
 output_type="accept: application/json"
+kill_script=false
 
 ###################################
 ########## Functions ##############
@@ -108,13 +109,18 @@ function GetCustomerZone() {
 			if [[ "$current_ip" == "$ip" ]];
 			then 
 
-				log "Current ip is set. Script will quit now."
-				kill -s TERM $TOP_PID
+				kill_script = true
 			
 			fi
 
-			rec_id=$(echo $i | jq '.id' | tr -d '"')
-			DeleteRecord "$rec_id"
+			if[ $kill_script ];
+			then
+				log "Current ip is set. Script will quit now."
+				kill -s TERM $TOP_PID
+			else
+				rec_id=$(echo $i | jq '.id' | tr -d '"')
+				DeleteRecord "$rec_id"
+			fi	
 		fi
 	done
 }
