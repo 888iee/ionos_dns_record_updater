@@ -52,7 +52,7 @@ function log() {
 }
 
 function RetrieveIpAdress() {
-	ip=$(curl -s https://ipinfo.io/ip)
+	ip=$(curl -6 https://ifconfig.co)
 	log "Ip set to $ip." 
 }
 
@@ -109,11 +109,11 @@ function GetCustomerZone() {
 			if [[ "$current_ip" == "$ip" ]];
 			then 
 
-				kill_script = true
+				$kill_script = true
 			
 			fi
 
-			if[ $kill_script ];
+			if [ $kill_script ];
 			then
 				log "Current ip is set. Script will quit now."
 				kill -s TERM $TOP_PID
